@@ -1,0 +1,7 @@
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\bin\Debug\ObjectsLogAppender.dll
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\bin\Debug\ObjectsLogAppender.pdb
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\bin\Debug\log4net.dll
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\bin\Debug\log4net.xml
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\obj\Debug\ObjectsLogAppender.csprojResolveAssemblyReference.cache
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\obj\Debug\ObjectsLogAppender.dll
+c:\users\eliran\documents\visual studio 2013\Projects\ObjectsLogAppender\ObjectsLogAppender\obj\Debug\ObjectsLogAppender.pdb
