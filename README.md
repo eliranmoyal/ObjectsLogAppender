@@ -1,4 +1,4 @@
-objectsLogAppender
+ObjectsLogAppender
 ==================
 
 Custom appender for log4net. Gives you the ability to write any object to log.
@@ -81,6 +81,6 @@ with configuration:
 
   
   TODO:
-  handle configuration check on runtime
-  support fields + private fields
+  1. handle configuration change on runtime
+  2. support fields + private fields
   
