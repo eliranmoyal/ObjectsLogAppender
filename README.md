@@ -5,10 +5,10 @@ Custom appender for log4net. Gives you the ability to write any object to log.
 
 You can configure the properties that you want to write to log.
 
-example of usage
-Assume we have Class SomeClass with some properties and we want only to write LastName and ID.
-Also we have ComplexClass with array,list,property Of Class Y that have IntY property, and a property of Class X that have StringX property
-the result of writing:
+Example of usage <br>
+Assume we have Class SomeClass with some properties and we want only to write LastName and ID.<br>
+Also we have ComplexClass with array,list,property Of Class Y that have IntY property, and a property of Class X that have StringX property<br>
+The Code
 ```c#
  var complexObject = new ComplexClass()
             {
