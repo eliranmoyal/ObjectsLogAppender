@@ -3,13 +3,13 @@ ObjectsLogAppender
 
 Custom appender for log4net. Gives you the ability to write any object to log.
 <br>
-You can configure the properties that you want to write to log.
+You can configure the members that you want to write to log.
 <br>
 <br>
 ####Supports:
 * Properties
 * Public fields
-* private fields
+* Private fields
 <br>
 
 ####Example of usage:
