@@ -6,13 +6,14 @@ Custom appender for log4net. Gives you the ability to write any object to log.
 You can configure the properties that you want to write to log.
 <br>
 <br>
-Supports:
+####Supports:
+* Properties
+* Public fields
+* private fields
 <br>
-	* properties
-	* public fields
-	* private fields
+
+####Example of usage:
 <br>
-Example of usage <br>
 Assume we have Class SomeClass with some properties and we want only to write LastName and ID.<br>
 Also we have ComplexClass with array,list,property Of Class Y that have IntY property, and a property of Class X that have StringX property
  and also have private int field<br>
@@ -55,7 +56,7 @@ The Code
 <br>
 2014-08-07 21:22:57,517 [1] DEBUG Log4ChecksConsole.LoggingClass CoolNumbersInArray=[1,2,4,8,16,32,64];CoolNamesInList=["eliran","moyal"];IntY=13;StringX="X X X";_intXPrivateField=14
             
-with configuration:
+####with configuration:
  <log4net>
     
     <root>
