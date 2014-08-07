@@ -14,13 +14,13 @@ namespace ObjectsLogAppender
     {
         #region configuration props
         public string Classes { get; set; }
-        public string PropNameAndValueSeperator { get; set; }
-        public string SeperatorBetweenProps { get; set; }
+        public string MemberNameAndValueSeperator { get; set; }
+        public string SeperatorBetweenMembers { get; set; }
         #endregion
 
         #region private members
       
-        private Dictionary<string, List<string>> _typeToProperties;
+        private Dictionary<string, List<string>> _typeToMembers;
         #endregion
 
         #region ForwardingAppender overrides
@@ -40,39 +40,39 @@ namespace ObjectsLogAppender
             }
 
             var jsonSerlizaer = new JavaScriptSerializer();
-            List<string> propList;
-            //if we don't have the type in configuration or we don't have propList just do json
-            if (!_typeToProperties.TryGetValue(typeName, out propList) || propList == null || propList.Count == 0)
+            List<string> membersList;
+            //if we don't have the type in configuration or we don't have memberList just do json
+            if (!_typeToMembers.TryGetValue(typeName, out membersList) || membersList == null || membersList.Count == 0)
             {
                 var json = jsonSerlizaer.Serialize(loggingEvent.MessageObject);
                 CallAllAppenders(CreateNewLoggingEvent(loggingEvent, json));
                 return;
             }
 
-            var logPropsList = new List<string>();
-            //for each property in configuration get propName And Value
-            foreach (var propName in propList)
+            var logMembersList = new List<string>();
+            //for each member in configuration get memberName And Value
+            foreach (var memberName in membersList)
             {
                 Type type = messageType;
                 object obj = messageObject;
-                string realPropertyName = propName;
+                string realMemberName = memberName;
 
 
-                //treat nestedProperties
-                if (propName.Contains(">"))
+                //treat nestedMembers
+                if (memberName.Contains(">"))
                 {
-                    //if drilling failed move to next property
-                    if (!DrillToLastProperty(propName, ref type, ref obj, ref realPropertyName))
+                    //if drilling failed move to next member
+                    if (!DrillToLastMember(memberName, ref type, ref obj, out realMemberName))
                         continue;
 
                 }
-                string jsonPropValue;
-                //if we cant find the property move to next property.
-                if (!GetJsonStringOfProperty(type, realPropertyName, obj, jsonSerlizaer, out jsonPropValue)) continue;
-                //add prop to log 
-                logPropsList.Add(realPropertyName + PropNameAndValueSeperator + jsonPropValue);
+                string jsonMemberValue;
+                //if we cant find the member move to next member.
+                if (!GetJsonStringOfMember(type, realMemberName, obj, jsonSerlizaer, out jsonMemberValue)) continue;
+                //add member to log 
+                logMembersList.Add(realMemberName + MemberNameAndValueSeperator + jsonMemberValue);
             }
-            string logMessage = string.Join(SeperatorBetweenProps, logPropsList);
+            string logMessage = string.Join(SeperatorBetweenMembers, logMembersList);
             CallAllAppenders(CreateNewLoggingEvent(loggingEvent, logMessage));
         }
 
@@ -89,29 +89,29 @@ namespace ObjectsLogAppender
         private void Initialize()
         {
             //defaults init
-            if (string.IsNullOrEmpty(PropNameAndValueSeperator))
-                PropNameAndValueSeperator = "=";
-            if (string.IsNullOrEmpty(SeperatorBetweenProps))
-                SeperatorBetweenProps = ";";
+            if (string.IsNullOrEmpty(MemberNameAndValueSeperator))
+                MemberNameAndValueSeperator = "=";
+            if (string.IsNullOrEmpty(SeperatorBetweenMembers))
+                SeperatorBetweenMembers = ";";
 
-            //type to props init
-            _typeToProperties = new Dictionary<string, List<string>>();
+            //type to members init
+            _typeToMembers = new Dictionary<string, List<string>>();
             if (Classes == null)
                 return;
-            //string should look like this ClassName={ClassProperty1;ClassProperty2;..}*ClassName2={ClassProperty1;ClassProperty2;}*..
+            //string should look like this ClassName={ClassProperty1;ClassMember2;..}*ClassName2={ClassMember1;ClassProperty2;}*..
             foreach (var classString in Classes.Split('*'))
             {
-                string[] classAndProps = classString.Split('=');
+                string[] classAndMembers = classString.Split('=');
                 //validation: should be [ClassName,{ClassProperty1;ClassProperty2}]
-                if (classAndProps.Length != 2) continue;
-                string className = classAndProps[0];
-                string allProps = classAndProps[1];
-                //validation: props should be {ClassProperty1;ClassProperty2}
-                if (!allProps.StartsWith("{") || !allProps.EndsWith("}"))
+                if (classAndMembers.Length != 2) continue;
+                string className = classAndMembers[0];
+                string allMembers = classAndMembers[1];
+                //validation: members should be {ClassProperty1;ClassProperty2}
+                if (!allMembers.StartsWith("{") || !allMembers.EndsWith("}"))
                     continue;
-                string allPropsWithoutBarkets = classAndProps[1].Substring(1, classAndProps[1].Length - 2);
+                string allMembersWithoutBarkets = classAndMembers[1].Substring(1, classAndMembers[1].Length - 2);
 
-                _typeToProperties.Add(className, allPropsWithoutBarkets.Split(';').ToList());
+                _typeToMembers.Add(className, allMembersWithoutBarkets.Split(';').ToList());
 
 
             }
@@ -132,51 +132,46 @@ namespace ObjectsLogAppender
 
         #region reflectionMethods
         
-        private bool DrillToLastProperty(string propName, ref Type type, ref object obj, ref string lastPropertyName)
+        private bool DrillToLastMember(string memberName, ref Type type, ref object obj, out string lastMemberName)
         {
-            string[] nesting = propName.Split('>');
+            string[] nesting = memberName.Split('>');
             bool validChain = true;
 
             //move to the last link of the chain 
             for (int i = 0; i < nesting.Length - 1; i++)
             {
-                string currentProperty = nesting[i];
-                obj = GetPropertyValue(type, currentProperty, obj);
-                if (obj == null)
+                string currentMember = nesting[i];
+                object memberValue;
+                bool successfullExtraction = obj.GetFieldOrProeprtyValue(type, currentMember, out memberValue);
+                //we want to stop if value is null cause we cant drill more.
+                if (!successfullExtraction || memberValue == null)
                 {
                     validChain = false;
                     break;
                 }
+                obj = memberValue;
                 type = obj.GetType();
 
             }
-            lastPropertyName = nesting.Last();
+            lastMemberName = nesting.Last();
             return validChain;
 
         }
 
-        private bool GetJsonStringOfProperty(Type type, string propName, object obj, JavaScriptSerializer jsonSerlizaer,
-    out string jsonPropValue)
+        private bool GetJsonStringOfMember(Type type, string memberName, object obj, JavaScriptSerializer jsonSerlizaer,
+    out string jsonMemberValue)
         {
-            var propValue = GetPropertyValue(type, propName, obj);
-            if (propValue == null)
-            {
-                jsonPropValue = null;
-                return false;
-            }
-            jsonPropValue = jsonSerlizaer.Serialize(propValue);
+            jsonMemberValue = null;
+            object memberValue;
+            bool successfullExtraction = obj.GetFieldOrProeprtyValue(type, memberName, out memberValue);
+            if (!successfullExtraction )
+            return false;
+            
+            jsonMemberValue = jsonSerlizaer.Serialize(memberValue);
             return true;
         }
 
-        private object GetPropertyValue(Type type, string propName, object obj)
-        {
-            PropertyInfo propertyInfo = type.GetProperty(propName);
-            //validation: no such property
-            if (propertyInfo == null) return null;
-
-
-            return propertyInfo.GetValue(obj, null);
-        }
+      
         #endregion
 
         #endregion
