@@ -19,19 +19,14 @@ namespace ObjectsLogAppender
         #endregion
 
         #region private members
-        private Boolean _initialized = false;
+      
         private Dictionary<string, List<string>> _typeToProperties;
         #endregion
 
-        #region ForwardingAppender implementation
+        #region ForwardingAppender overrides
         protected override void Append(LoggingEvent loggingEvent)
         {
-            //init private members
-            if (!_initialized)
-            {
-                Initialize();
-                _initialized = true;
-            }
+           
 
             object messageObject = loggingEvent.MessageObject;
             Type messageType = messageObject.GetType();
@@ -79,6 +74,12 @@ namespace ObjectsLogAppender
             }
             string logMessage = string.Join(SeperatorBetweenProps, logPropsList);
             CallAllAppenders(CreateNewLoggingEvent(loggingEvent, logMessage));
+        }
+
+        public override void ActivateOptions()
+        {
+            base.ActivateOptions();
+            Initialize();
         }
 
         #endregion
