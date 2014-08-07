@@ -5,11 +5,12 @@ Custom appender for log4net. Gives you the ability to write any object to log.
 <br>
 You can configure the properties that you want to write to log.
 <br>
+<br>
 Supports:
 <br>
-	1. properties
-	2. public fields
-	3. private fields
+	* properties
+	* public fields
+	* private fields
 <br>
 Example of usage <br>
 Assume we have Class SomeClass with some properties and we want only to write LastName and ID.<br>
