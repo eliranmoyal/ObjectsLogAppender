@@ -81,6 +81,6 @@ with configuration:
 
   
   TODO:
-  1. handle configuration change on runtime
-  2. support fields + private fields
+  1. support fields + private fields
+  
   
