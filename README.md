@@ -91,4 +91,7 @@ The Code
 
   
   
-  
+<br>
+####TODO:
++ Change configuration to be more maintanable/readable (xml element per class)
+<br>
