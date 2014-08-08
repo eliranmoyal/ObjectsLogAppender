@@ -18,16 +18,22 @@ namespace ObjectsLogAppender
         public string SeperatorBetweenMembers { get; set; }
         #endregion
 
+    
         #region private members
-      
-        private Dictionary<string, List<string>> _typeToMembers;
+
+        private IMembersExtractor _membersExtractor;
+        #endregion
+
+        #region ctor
+        public ObjectsAppender()
+        {
+            _membersExtractor = new ReflectionMembersExtractor();
+        }
         #endregion
 
         #region ForwardingAppender overrides
         protected override void Append(LoggingEvent loggingEvent)
         {
-           
-
             object messageObject = loggingEvent.MessageObject;
             Type messageType = messageObject.GetType();
             var typeName = messageType.Name;
@@ -41,8 +47,10 @@ namespace ObjectsLogAppender
 
             var jsonSerlizaer = new JavaScriptSerializer();
             List<string> membersList;
-            //if we don't have the type in configuration or we don't have memberList just do json
-            if (!_typeToMembers.TryGetValue(typeName, out membersList) || membersList == null || membersList.Count == 0)
+            
+            //if we don't have the type in extractor or we don't have memberList just do json
+            //maby move to configuation ? serliaze if unknown type?
+            if (!_membersExtractor.GetClassMapping(typeName, out membersList) || membersList == null || membersList.Count == 0)
             {
                 var json = jsonSerlizaer.Serialize(loggingEvent.MessageObject);
                 CallAllAppenders(CreateNewLoggingEvent(loggingEvent, json));
@@ -53,22 +61,13 @@ namespace ObjectsLogAppender
             //for each member in configuration get memberName And Value
             foreach (var memberName in membersList)
             {
-                Type type = messageType;
-                object obj = messageObject;
-                string realMemberName = memberName;
-
-
-                //treat nestedMembers
-                if (memberName.Contains(">"))
-                {
-                    //if drilling failed move to next member
-                    if (!DrillToLastMember(memberName, ref type, ref obj, out realMemberName))
-                        continue;
-
-                }
-                string jsonMemberValue;
+                object memberValue;
+                string realMemberName;
+                if(!_membersExtractor.ExtractMemberValue(messageObject, memberName,out memberValue,out realMemberName))
+                    continue;
+              
                 //if we cant find the member move to next member.
-                if (!GetJsonStringOfMember(type, realMemberName, obj, jsonSerlizaer, out jsonMemberValue)) continue;
+                string jsonMemberValue = jsonSerlizaer.Serialize(memberValue);
                 //add member to log 
                 logMembersList.Add(realMemberName + MemberNameAndValueSeperator + jsonMemberValue);
             }
@@ -95,7 +94,9 @@ namespace ObjectsLogAppender
                 SeperatorBetweenMembers = ";";
 
             //type to members init
-            _typeToMembers = new Dictionary<string, List<string>>();
+            _membersExtractor.RemoveAllClassesMapping();
+            _membersExtractor.MembersChainIndicator = '>';
+
             if (Classes == null)
                 return;
             //string should look like this ClassName={ClassProperty1;ClassMember2;..}*ClassName2={ClassMember1;ClassProperty2;}*..
@@ -111,9 +112,7 @@ namespace ObjectsLogAppender
                     continue;
                 string allMembersWithoutBarkets = classAndMembers[1].Substring(1, classAndMembers[1].Length - 2);
 
-                _typeToMembers.Add(className, allMembersWithoutBarkets.Split(';').ToList());
-
-
+                _membersExtractor.AddClassMapping(className, allMembersWithoutBarkets.Split(';').ToList());
             }
         }
         private LoggingEvent CreateNewLoggingEvent(LoggingEvent loggingEvent, string newData)
@@ -130,49 +129,6 @@ namespace ObjectsLogAppender
             }
         }
 
-        #region reflectionMethods
-        
-        private bool DrillToLastMember(string memberName, ref Type type, ref object obj, out string lastMemberName)
-        {
-            string[] nesting = memberName.Split('>');
-            bool validChain = true;
-
-            //move to the last link of the chain 
-            for (int i = 0; i < nesting.Length - 1; i++)
-            {
-                string currentMember = nesting[i];
-                object memberValue;
-                bool successfullExtraction = obj.GetFieldOrProeprtyValue(type, currentMember, out memberValue);
-                //we want to stop if value is null cause we cant drill more.
-                if (!successfullExtraction || memberValue == null)
-                {
-                    validChain = false;
-                    break;
-                }
-                obj = memberValue;
-                type = obj.GetType();
-
-            }
-            lastMemberName = nesting.Last();
-            return validChain;
-
-        }
-
-        private bool GetJsonStringOfMember(Type type, string memberName, object obj, JavaScriptSerializer jsonSerlizaer,
-    out string jsonMemberValue)
-        {
-            jsonMemberValue = null;
-            object memberValue;
-            bool successfullExtraction = obj.GetFieldOrProeprtyValue(type, memberName, out memberValue);
-            if (!successfullExtraction )
-            return false;
-            
-            jsonMemberValue = jsonSerlizaer.Serialize(memberValue);
-            return true;
-        }
-
-      
-        #endregion
 
         #endregion
     }
