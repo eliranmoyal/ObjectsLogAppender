@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectsLogAppender", "ObjectsLogAppender\ObjectsLogAppender.csproj", "{7AAAB68B-0892-4945-B7AF-C5EADCD75D03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectsLogAppender.Tests", "ObjectsLogAppender.Tests\ObjectsLogAppender.Tests.csproj", "{4B5FF808-0A55-424D-8E63-EBBFF742EAD6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{7AAAB68B-0892-4945-B7AF-C5EADCD75D03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AAAB68B-0892-4945-B7AF-C5EADCD75D03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AAAB68B-0892-4945-B7AF-C5EADCD75D03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B5FF808-0A55-424D-8E63-EBBFF742EAD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B5FF808-0A55-424D-8E63-EBBFF742EAD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B5FF808-0A55-424D-8E63-EBBFF742EAD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B5FF808-0A55-424D-8E63-EBBFF742EAD6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
