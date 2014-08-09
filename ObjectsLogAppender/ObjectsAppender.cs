@@ -17,18 +17,25 @@ namespace ObjectsLogAppender
         public string MemberNameAndValueSeperator { get; set; }
         public string SeperatorBetweenMembers { get; set; }
         #endregion
-
     
         #region private members
-
         private IMembersExtractor _membersExtractor;
+        private IObjectSerliazer _serliazer;
         #endregion
 
-        #region ctor
+        #region ctors
         public ObjectsAppender()
         {
             _membersExtractor = new ReflectionMembersExtractor();
+            _serliazer = new JsonSerliazer();
         }
+
+        public ObjectsAppender(IMembersExtractor membersExtractor, IObjectSerliazer serliazer)
+        {
+            _membersExtractor = membersExtractor;
+            _serliazer = serliazer;
+        }
+
         #endregion
 
         #region ForwardingAppender overrides
@@ -45,14 +52,14 @@ namespace ObjectsLogAppender
                 return;
             }
 
-            var jsonSerlizaer = new JavaScriptSerializer();
+           
             List<string> membersList;
             
             //if we don't have the type in extractor or we don't have memberList just do json
             //maby move to configuation ? serliaze if unknown type?
             if (!_membersExtractor.GetClassMapping(typeName, out membersList) || membersList == null || membersList.Count == 0)
             {
-                var json = jsonSerlizaer.Serialize(loggingEvent.MessageObject);
+                var json = _serliazer.SerializeObject(loggingEvent.MessageObject);
                 CallAllAppenders(CreateNewLoggingEvent(loggingEvent, json));
                 return;
             }
@@ -67,7 +74,7 @@ namespace ObjectsLogAppender
                     continue;
               
                 //if we cant find the member move to next member.
-                string jsonMemberValue = jsonSerlizaer.Serialize(memberValue);
+                string jsonMemberValue = _serliazer.SerializeObject(memberValue);
                 //add member to log 
                 logMembersList.Add(realMemberName + MemberNameAndValueSeperator + jsonMemberValue);
             }
