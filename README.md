@@ -68,6 +68,7 @@ The Code
       <Classes value="SomeClass={LastName;ID}*ComplexClass={CoolNumbersInArray;CoolNamesInList;Y>IntY;Y>X>StringX;Y>X>_intXPrivateField}" />
       <MemberNameAndValueSeperator value ="=" />
       <SeperatorBetweenMembers value =";" />
+	  <SeriliazeUnknownObjects value="False" />
       <appender-ref ref="LogFileAppender"/>
       <layout type="log4net.Layout.PatternLayout,log4net">
         <param name="ConversionPattern" value="%d{ABSOLUTE} %-5p %c{1}:%L - %m%n" />

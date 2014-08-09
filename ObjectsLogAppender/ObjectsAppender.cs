@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -16,6 +17,7 @@ namespace ObjectsLogAppender
         public string Classes { get; set; }
         public string MemberNameAndValueSeperator { get; set; }
         public string SeperatorBetweenMembers { get; set; }
+        public bool SeriliazeUnknownObjects { get; set; }
         #endregion
     
         #region private members
@@ -55,12 +57,15 @@ namespace ObjectsLogAppender
            
             List<string> membersList;
             
-            //if we don't have the type in extractor or we don't have memberList just do json
-            //maby move to configuation ? serliaze if unknown type?
+            //if we don't have the type in extractor or we don't have memberList just serialize
+            
             if (!_membersExtractor.GetClassMapping(typeName, out membersList) || membersList == null || membersList.Count == 0)
             {
-                var json = _serliazer.SerializeObject(loggingEvent.MessageObject);
-                CallAllAppenders(CreateNewLoggingEvent(loggingEvent, json));
+                if (SeriliazeUnknownObjects)
+                {
+                    var serliazedObjectString = _serliazer.SerializeObject(loggingEvent.MessageObject);
+                    CallAllAppenders(CreateNewLoggingEvent(loggingEvent, serliazedObjectString));
+                }
                 return;
             }
 
@@ -74,9 +79,9 @@ namespace ObjectsLogAppender
                     continue;
               
                 //if we cant find the member move to next member.
-                string jsonMemberValue = _serliazer.SerializeObject(memberValue);
+                string serliazedMemberValue = _serliazer.SerializeObject(memberValue);
                 //add member to log 
-                logMembersList.Add(realMemberName + MemberNameAndValueSeperator + jsonMemberValue);
+                logMembersList.Add(realMemberName + MemberNameAndValueSeperator + serliazedMemberValue);
             }
             string logMessage = string.Join(SeperatorBetweenMembers, logMembersList);
             CallAllAppenders(CreateNewLoggingEvent(loggingEvent, logMessage));
