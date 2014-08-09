@@ -17,7 +17,7 @@ namespace ObjectsLogAppender
         public string Classes { get; set; }
         public string MemberNameAndValueSeperator { get; set; }
         public string SeperatorBetweenMembers { get; set; }
-        public bool SeriliazeUnknownObjects { get; set; }
+        public bool SerializeUnknownObjects { get; set; }
         #endregion
     
         #region private members
@@ -61,7 +61,7 @@ namespace ObjectsLogAppender
             
             if (!_membersExtractor.GetClassMapping(typeName, out membersList) || membersList == null || membersList.Count == 0)
             {
-                if (SeriliazeUnknownObjects)
+                if (SerializeUnknownObjects)
                 {
                     var serliazedObjectString = _serliazer.SerializeObject(loggingEvent.MessageObject);
                     CallAllAppenders(CreateNewLoggingEvent(loggingEvent, serliazedObjectString));
