@@ -49,6 +49,7 @@
     <Compile Include="IObjectSerliazer.cs" />
     <Compile Include="JsonSerliazer.cs" />
     <Compile Include="ObjectsAppender.cs" />
+    <Compile Include="ClassConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReflectionMembersExtractor.cs" />
   </ItemGroup>

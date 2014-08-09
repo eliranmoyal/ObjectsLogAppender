@@ -14,7 +14,6 @@ namespace ObjectsLogAppender
     public class ObjectsAppender : ForwardingAppender
     {
         #region configuration props
-        public string Classes { get; set; }
         public string MemberNameAndValueSeperator { get; set; }
         public string SeperatorBetweenMembers { get; set; }
         public bool SerializeUnknownObjects { get; set; }
@@ -23,6 +22,8 @@ namespace ObjectsLogAppender
         #region private members
         private IMembersExtractor _membersExtractor;
         private IObjectSerliazer _serliazer;
+        //initialize from configuration. using AddClass function
+        private List<ClassConfiguration> _classesConfigurations = new List<ClassConfiguration>(); 
         #endregion
 
         #region ctors
@@ -93,6 +94,12 @@ namespace ObjectsLogAppender
             Initialize();
         }
 
+
+        public void AddClass(ClassConfiguration classConfiguration)
+        {
+            _classesConfigurations.Add(classConfiguration);
+        }
+
         #endregion
 
         #region private functions
@@ -109,24 +116,12 @@ namespace ObjectsLogAppender
             _membersExtractor.RemoveAllClassesMapping();
             _membersExtractor.MembersChainIndicator = '>';
 
-            if (Classes == null)
+            if (_classesConfigurations == null || _classesConfigurations.Count == 0)
                 return;
-            //string should look like this ClassName={ClassProperty1;ClassMember2;..}*ClassName2={ClassMember1;ClassProperty2;}*..
-            foreach (var classString in Classes.Split('*'))
-            {
-                string[] classAndMembers = classString.Split('=');
-                //validation: should be [ClassName,{ClassProperty1;ClassProperty2}]
-                if (classAndMembers.Length != 2) continue;
-                string className = classAndMembers[0];
-                string allMembers = classAndMembers[1];
-                //validation: members should be {ClassProperty1;ClassProperty2}
-                if (!allMembers.StartsWith("{") || !allMembers.EndsWith("}"))
-                    continue;
-                string allMembersWithoutBarkets = classAndMembers[1].Substring(1, classAndMembers[1].Length - 2);
 
-                _membersExtractor.AddClassMapping(className, allMembersWithoutBarkets.Split(';').ToList());
-            }
+            _classesConfigurations.ForEach(config=>_membersExtractor.AddClassMapping(config.Name,config.MembersList));
         }
+
         private LoggingEvent CreateNewLoggingEvent(LoggingEvent loggingEvent, string newData)
         {
             var loggingData = loggingEvent.GetLoggingEventData();

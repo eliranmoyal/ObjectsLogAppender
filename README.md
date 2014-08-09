@@ -63,12 +63,24 @@ The Code
       <level value="ALL" />
       <appender-ref ref="ObjectsAppender" />
     </root>
-
-    <appender name="ObjectsAppender" type="ObjectsLogAppender.ObjectsAppender, ObjectsLogAppender">
-      <Classes value="SomeClass={LastName;ID}*ComplexClass={CoolNumbersInArray;CoolNamesInList;Y>IntY;Y>X>StringX;Y>X>_intXPrivateField}" />
+	
+	<appender name="ObjectsAppender" type="ObjectsLogAppender.ObjectsAppender, ObjectsLogAppender">
       <MemberNameAndValueSeperator value ="=" />
       <SeperatorBetweenMembers value =";" />
-	  <SerializeUnknownObjects value="False" />
+      <SerializeUnknownObjects value="False" />
+      <Class>
+        <name value="SomeClass" />
+        <member value="LastName" />
+        <member value="ID" />
+      </Class>
+      <Class>
+        <name value="ComplexClass" />
+        <member value="CoolNumbersInArray" />
+		<member value="CoolNamesInList" />
+        <member value="Y>IntY" />
+        <member value="Y>X>StringX" />
+        <member value="Y>X>_intXPrivateField" />
+      </Class>
       <appender-ref ref="LogFileAppender"/>
       <layout type="log4net.Layout.PatternLayout,log4net">
         <param name="ConversionPattern" value="%d{ABSOLUTE} %-5p %c{1}:%L - %m%n" />
@@ -94,5 +106,5 @@ The Code
   
 <br>
 ####TODO:
-+ Change configuration to be more maintanable/readable (xml element per class)
++ Make it more efficient (save MemberInfos ?)
 <br>
