@@ -10,6 +10,11 @@ namespace ObjectsLogAppender.Tests
     [TestFixture]
     public class ReflectionMembersExtractorTests : ReflectionMembersExtractor
     {
+        [SetUp]
+        public void Init()
+        {
+            MembersChainIndicator = '>';
+        }
 
         [TestFixtureTearDown]
         public void TearDownPerTest()
@@ -94,6 +99,67 @@ namespace ObjectsLogAppender.Tests
 
             Assert.AreEqual(memberValue, fieldValue);
         }
+
+
+        [Test]
+        public void GetMemberValue_NullTest_ReturnFalseAndNull()
+        {
+            object memberValue;
+            bool successfulExtraction = GetMemberValue(null, null, "intField", out memberValue);
+            Assert.IsFalse(successfulExtraction);
+            Assert.IsNull(memberValue);
+
+        }
+
+        [Test]
+        public void ExtractMemberValue_OneLevelNestedClass_ReturnPropertyInsideClass()
+        {
+            AddClassMapping("OneLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
+            const int innerPropertyValue = 2;
+            var testClass = new OneLevelNestedClass()
+            {
+                InnerClass = new TestClassWithOnePublicProperty()
+                {
+                    IntProperty = innerPropertyValue
+                }
+            };
+          
+            object memberValue;
+            string realName;
+            bool successfulExtraction = ExtractMemberValue(testClass, "InnerClass>IntProperty", out memberValue, out realName);
+
+            Assert.IsTrue(successfulExtraction);
+
+            Assert.AreEqual("IntProperty",realName);
+            Assert.AreEqual(memberValue, innerPropertyValue);
+        }
+
+        [Test]
+        public void ExtractMemberValue_TwoLevelNestedClass_ReturnPropertyInsideClass()
+        {
+            AddClassMapping("TwoLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
+            const int innerPropertyValue = 2;
+            var testClass = new TwoLevelNestedClass()
+            {
+                NestedClass = new OneLevelNestedClass()
+                {
+                    InnerClass = new TestClassWithOnePublicProperty()
+                    {
+                        IntProperty = innerPropertyValue
+                    }
+                }
+            };
+
+            object memberValue;
+            string realName;
+            bool successfulExtraction = ExtractMemberValue(testClass, "NestedClass>InnerClass>IntProperty", out memberValue, out realName);
+
+            Assert.IsTrue(successfulExtraction);
+
+            Assert.AreEqual("IntProperty", realName);
+            Assert.AreEqual(memberValue, innerPropertyValue);
+        }
+    
     }
 
 
@@ -135,6 +201,15 @@ namespace ObjectsLogAppender.Tests
         {
             _intField = value;
         }
+    }
+
+    internal class OneLevelNestedClass
+    {
+        public TestClassWithOnePublicProperty InnerClass { get; set; }
+    }
+    internal class TwoLevelNestedClass
+    {
+        public OneLevelNestedClass NestedClass { get; set; }
     }
     #endregion
 }
