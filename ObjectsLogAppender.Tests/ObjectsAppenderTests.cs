@@ -29,16 +29,15 @@ namespace ObjectsLogAppender.Tests
             string stringToLog = "very wired string to log";
             logger.Debug(stringToLog);
             Thread.Sleep(500);
-            using (FileStream fileStream = File.Open("test.log", FileMode.Open))
+            string line;
+            using (StreamReader streamReader = new StreamReader("test.log"))
             {
-                using (StreamReader streamReader = new StreamReader(fileStream))
-                {
-                    string line = streamReader.ReadLine();
-                    Assert.IsNotNullOrEmpty(line);
-                    Assert.IsTrue(line.Contains("DEBUG"));
-                    Assert.IsTrue(line.Contains(stringToLog));
-                }
+                line = streamReader.ReadLine();
             }
+            Assert.IsNotNullOrEmpty(line);
+            Assert.IsTrue(line.Contains("DEBUG"));
+            Assert.IsTrue(line.Contains(stringToLog));
+
         }
 
         [Test]
@@ -60,20 +59,74 @@ namespace ObjectsLogAppender.Tests
             };
             logger.Debug(objectToWrite);
             Thread.Sleep(500);
-            using (FileStream fileStream = File.Open("test.log", FileMode.Open))
+            string line;
+            using (StreamReader streamReader = new StreamReader("test.log"))
             {
-                using (StreamReader streamReader = new StreamReader(fileStream))
-                {
-                    string line = streamReader.ReadLine();
-                    Assert.IsNotNullOrEmpty(line);
-                    Assert.IsTrue(line.Contains("DEBUG"));
-                    Assert.IsTrue(line.Contains("SomeInt=" + integerToLog));
-                    Assert.IsFalse(line.Contains(stringNotToLog));
-                }
+               line = streamReader.ReadLine();
+
             }
+            Assert.IsNotNullOrEmpty(line);
+            Assert.IsTrue(line.Contains("DEBUG"));
+            Assert.IsTrue(line.Contains("SomeInt=" + integerToLog));
+            Assert.IsFalse(line.Contains(stringNotToLog));
         }
 
-        private ILog GetConfiguredLog(Dictionary<string, List<string>> classesToMembers)
+        [Test]
+        public void LogSimpleClass_NoClassConfigurationWithSerliazeUnknownTrue_ShouldWriteJsonOfThisClass()
+        {
+            ILog logger =
+                GetConfiguredLog(new Dictionary<string, List<string>>(),serializeUnknownObjects:true);
+
+            string stringToLog = "very wired string to log";
+            int integerToLog = 12481632;
+
+            var objectToWrite = new SimpleClass()
+            {
+                SomeString = stringToLog,
+                SomeInt = integerToLog
+            };
+            logger.Debug(objectToWrite);
+            Thread.Sleep(500);
+            string line;
+            using (StreamReader streamReader = new StreamReader("test.log"))
+            {
+                line = streamReader.ReadLine();
+
+            }
+            Assert.IsNotNullOrEmpty(line);
+            Assert.IsTrue(line.Contains("DEBUG"));
+            string oneWay = "{\"SomeInt\":12481632,\"SomeString\":\"very wired string to log\"}";
+            string otherWay = "{\"SomeString\":\"very wired string to log\",\"SomeInt\":12481632}";
+            Assert.IsTrue(line.Contains(oneWay) || line.Contains(otherWay));
+        }
+
+
+        [Test]
+        public void LogSimpleClass_NoClassConfigurationWithSerliazeUnknownFalse_ShouldNotWriteAnything()
+        {
+            ILog logger =
+                GetConfiguredLog(new Dictionary<string, List<string>>(), serializeUnknownObjects: false);
+
+            string stringNotToLog = "very wired string to log";
+            int integerNotToLog = 12481632;
+
+            var objectToWrite = new SimpleClass()
+            {
+                SomeString = stringNotToLog,
+                SomeInt = integerNotToLog
+            };
+            logger.Debug(objectToWrite);
+            Thread.Sleep(500);
+            string line;
+            using (StreamReader streamReader = new StreamReader("test.log"))
+            {
+                line = streamReader.ReadLine();
+
+            }
+            Assert.IsNullOrEmpty(line);
+        }
+
+        private ILog GetConfiguredLog(Dictionary<string, List<string>> classesToMembers, bool serializeUnknownObjects = true)
         {
             //create configuration from classToMembers
             /* <Class>
@@ -105,7 +158,7 @@ namespace ObjectsLogAppender.Tests
                 <appender name='ObjectsAppender' type='ObjectsLogAppender.ObjectsAppender, ObjectsLogAppender'>
                     <MemberNameAndValueSeperator value ='=' />
                     <SeperatorBetweenMembers value =';' />
-                    <SerializeUnknownObjects value='False' /> " +
+                    <SerializeUnknownObjects value='" + serializeUnknownObjects.ToString() + "' /> " +
                       classAndMembersConfiguration + @"
     
                     <appender-ref ref='LogFileAppender'/>
