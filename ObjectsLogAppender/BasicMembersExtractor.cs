@@ -83,7 +83,8 @@ namespace ObjectsLogAppender
         #endregion
 
         #region abstract
-        protected abstract bool GetMemberValue(object extractFrom,Type type, string memberName, out object value);
+
+        public abstract bool GetMemberValue(object extractFrom,Type type, string memberName, out object value);
         #endregion
 
         #region private functions

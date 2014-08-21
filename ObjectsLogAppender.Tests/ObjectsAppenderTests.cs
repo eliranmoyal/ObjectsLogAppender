@@ -1,24 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using log4net;
-using log4net.Config;
+using log4net.Appender;
 using NUnit.Framework;
+using log4net.Core;
+using log4net.Layout;
+using log4net.Repository.Hierarchy;
 
 namespace ObjectsLogAppender.Tests
 {
     [TestFixture]
     public class ObjectsAppenderTests
     {
-
         [TearDown]
-        public void TearDown()
+        public void Teardown()
         {
-            File.Delete("test.log");
+            LogManager.Shutdown();
         }
 
         [Test]
@@ -28,16 +25,13 @@ namespace ObjectsLogAppender.Tests
             ILog logger = GetConfiguredLog(new Dictionary<string, List<string>>());
             string stringToLog = "very wired string to log";
             logger.Debug(stringToLog);
-            Thread.Sleep(500);
-            string line;
-            using (StreamReader streamReader = new StreamReader("test.log"))
-            {
-                line = streamReader.ReadLine();
-            }
-            Assert.IsNotNullOrEmpty(line);
-            Assert.IsTrue(line.Contains("DEBUG"));
-            Assert.IsTrue(line.Contains(stringToLog));
 
+            MemoryAppender appender = GetMemoryAppender();
+            LoggingEvent[] loggedEvents = appender.GetEvents();
+            CollectionAssert.IsNotEmpty(loggedEvents);
+            var loggedEvent = loggedEvents[0];
+            Assert.That(loggedEvent.Level, Is.EqualTo(Level.Debug));
+            Assert.That(loggedEvent.RenderedMessage, Is.EqualTo(stringToLog));
         }
 
         [Test]
@@ -57,18 +51,17 @@ namespace ObjectsLogAppender.Tests
                 SomeString = stringNotToLog,
                 SomeInt = integerToLog
             };
-            logger.Debug(objectToWrite);
-            Thread.Sleep(500);
-            string line;
-            using (StreamReader streamReader = new StreamReader("test.log"))
-            {
-               line = streamReader.ReadLine();
 
-            }
-            Assert.IsNotNullOrEmpty(line);
-            Assert.IsTrue(line.Contains("DEBUG"));
-            Assert.IsTrue(line.Contains("SomeInt=" + integerToLog));
-            Assert.IsFalse(line.Contains(stringNotToLog));
+            logger.Debug(objectToWrite);
+            
+            MemoryAppender appender = GetMemoryAppender();
+            LoggingEvent[] loggedEvents = appender.GetEvents();
+            CollectionAssert.IsNotEmpty(loggedEvents);
+            var loggedEvent = loggedEvents[0];
+            Assert.That(loggedEvent.Level, Is.EqualTo(Level.Debug));
+            string stringToLog = "SomeInt=" + integerToLog;
+            Assert.That(loggedEvent.RenderedMessage, Is.StringContaining(stringToLog));
+            Assert.That(loggedEvent.RenderedMessage, Is.Not.StringContaining(stringNotToLog));
         }
 
         [Test]
@@ -86,18 +79,18 @@ namespace ObjectsLogAppender.Tests
                 SomeInt = integerToLog
             };
             logger.Debug(objectToWrite);
-            Thread.Sleep(500);
-            string line;
-            using (StreamReader streamReader = new StreamReader("test.log"))
-            {
-                line = streamReader.ReadLine();
 
-            }
-            Assert.IsNotNullOrEmpty(line);
-            Assert.IsTrue(line.Contains("DEBUG"));
+            MemoryAppender appender = GetMemoryAppender();
+
+            LoggingEvent[] loggedEvents = appender.GetEvents();
+
+            CollectionAssert.IsNotEmpty(loggedEvents);
+            LoggingEvent loggingEvent = loggedEvents[0];
+            Assert.That(loggingEvent.Level, Is.EqualTo(Level.Debug));
             string oneWay = "{\"SomeInt\":12481632,\"SomeString\":\"very wired string to log\"}";
             string otherWay = "{\"SomeString\":\"very wired string to log\",\"SomeInt\":12481632}";
-            Assert.IsTrue(line.Contains(oneWay) || line.Contains(otherWay));
+
+            Assert.That(loggingEvent.RenderedMessage, Is.EqualTo(oneWay).Or.EqualTo(otherWay));
         }
 
 
@@ -116,73 +109,60 @@ namespace ObjectsLogAppender.Tests
                 SomeInt = integerNotToLog
             };
             logger.Debug(objectToWrite);
-            Thread.Sleep(500);
-            string line;
-            using (StreamReader streamReader = new StreamReader("test.log"))
-            {
-                line = streamReader.ReadLine();
 
-            }
-            Assert.IsNullOrEmpty(line);
+            MemoryAppender appender = GetMemoryAppender();
+
+            LoggingEvent[] loggingEvents = appender.GetEvents();
+            CollectionAssert.IsEmpty(loggingEvents);
         }
 
         private ILog GetConfiguredLog(Dictionary<string, List<string>> classesToMembers, bool serializeUnknownObjects = true)
         {
-            //create configuration from classToMembers
-            /* <Class>
-                 <name value="SomeClass" />
-                <member value="FirstName" />
-                <member value="ID" />
-            </Class>*/
-            string classAndMembersConfiguration = "";
+            ILog result = LogManager.GetLogger("Test");
+
+            Hierarchy hierarchy = (Hierarchy)LogManager.GetRepository();
+
+            PatternLayout patternLayout = new PatternLayout();
+            patternLayout.ConversionPattern = "%d [%t] %-5p %c %m%n";
+            patternLayout.ActivateOptions();
+
+            ObjectsAppender objectsAppender = new ObjectsAppender();
+
             foreach (KeyValuePair<string, List<string>> classToMembers in classesToMembers)
             {
-                classAndMembersConfiguration += "<Class> ";
-                classAndMembersConfiguration += "<name value='" + classToMembers.Key + "' /> ";
-                foreach (var member in classToMembers.Value)
+                ClassConfiguration classConfiguration = new ClassConfiguration();
+
+                classConfiguration.Name = classToMembers.Key;
+
+                foreach (string members in classToMembers.Value)
                 {
-                    classAndMembersConfiguration += "<member value='" + member + "' /> ";
+                    classConfiguration.AddMember(members);
                 }
-                classAndMembersConfiguration += "</Class> ";
 
-
+                objectsAppender.AddClass(classConfiguration);
             }
-            string configurationString = @"
-                <log4net>
-    
-                <root>
-                    <level value='ALL' />
-                    <appender-ref ref='ObjectsAppender' />
-                </root>
 
-                <appender name='ObjectsAppender' type='ObjectsLogAppender.ObjectsAppender, ObjectsLogAppender'>
-                    <MemberNameAndValueSeperator value ='=' />
-                    <SeperatorBetweenMembers value =';' />
-                    <SerializeUnknownObjects value='" + serializeUnknownObjects.ToString() + "' /> " +
-                      classAndMembersConfiguration + @"
-    
-                    <appender-ref ref='LogFileAppender'/>
-                    <layout type='log4net.Layout.PatternLayout,log4net'>
-                    <param name='ConversionPattern' value='%d{ABSOLUTE} %-5p %c{1}:%L - %m%n' />
-                    </layout>
-                </appender>
+            objectsAppender.SerializeUnknownObjects = serializeUnknownObjects;
 
-                <appender name='LogFileAppender' type='log4net.Appender.RollingFileAppender'>
-                    <param name='File' value='test.log'/>
-                    <lockingModel type='log4net.Appender.FileAppender+MinimalLock' />
-                    <appendToFile value='true' />
-                    <rollingStyle value='Size' />
-                    <maxSizeRollBackups value='2' />
-                    <maximumFileSize value='1MB' />
-                    <staticLogFileName value='true' />
-                    <layout type='log4net.Layout.PatternLayout'>
-                    <param name='ConversionPattern' value='%d [%t] %-5p %c %m%n'/>
-                    </layout>
-                </appender>
+            MemoryAppender memory = new MemoryAppender();
+            memory.ActivateOptions();
 
-                </log4net>";
-            XmlConfigurator.Configure(new MemoryStream(Encoding.UTF8.GetBytes(configurationString)));
-            return LogManager.GetLogger("Test");
+            objectsAppender.AddAppender(memory);
+            objectsAppender.ActivateOptions();
+
+            Logger casted = (Logger) result.Logger;
+            casted.AddAppender(objectsAppender);
+
+            casted.Level = Level.Debug;
+            hierarchy.Configured = true;
+            
+            return result;
+        }
+
+        private static MemoryAppender GetMemoryAppender()
+        {
+            return LogManager.GetRepository().GetAppenders().OfType<MemoryAppender>()
+                             .FirstOrDefault();
         }
     }
 

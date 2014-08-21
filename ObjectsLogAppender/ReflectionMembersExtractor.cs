@@ -18,7 +18,8 @@ namespace ObjectsLogAppender
         #endregion
 
         #region abstract impl
-        protected override bool GetMemberValue(object extractFrom, Type type, string memberName, out object value)
+
+        public override bool GetMemberValue(object extractFrom, Type type, string memberName, out object value)
         {
             if (extractFrom == null)
             {

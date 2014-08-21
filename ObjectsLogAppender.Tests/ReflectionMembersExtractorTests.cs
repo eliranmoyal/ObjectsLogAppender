@@ -8,31 +8,33 @@ using NUnit.Framework;
 namespace ObjectsLogAppender.Tests
 {
     [TestFixture]
-    public class ReflectionMembersExtractorTests : ReflectionMembersExtractor
+    public class ReflectionMembersExtractorTests
     {
+        public ReflectionMembersExtractor Extractor { get; set; }
+
         [SetUp]
         public void Init()
         {
-            MembersChainIndicator = '>';
+            Extractor = new ReflectionMembersExtractor {MembersChainIndicator = '>'};
         }
 
         [TestFixtureTearDown]
         public void TearDownPerTest()
         {
-            RemoveAllClassesMapping();
+            Extractor.RemoveAllClassesMapping();
         }
 
         [Test]
         public void GetMemberValue_BasicPublicProperty_ReturnPublicPropertyValue()
         {
-            AddClassMapping("TestClassWithOnePublicProperty",new List<string>(){"IntProperty"});
+            Extractor.AddClassMapping("TestClassWithOnePublicProperty", new List<string>(){"IntProperty"});
             const int propertyValue = 2;
             var testClass = new TestClassWithOnePublicProperty()
             {
                 IntProperty = propertyValue
             };
             object memberValue;
-            bool successfulExtraction = GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -42,12 +44,12 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void GetMemberValue_BasicProtectedProperty_ReturnProtectedPropertyValue()
         {
-            AddClassMapping("TestClassWithOneProtectedProperty", new List<string>() { "IntProperty" });
+            Extractor.AddClassMapping("TestClassWithOneProtectedProperty", new List<string>() { "IntProperty" });
             const int propertyValue = 2;
             var testClass = new TestClassWithOneProtectedProperty();
             testClass.SetProtectedPropertyValue(propertyValue);
             object memberValue;
-            bool successfulExtraction = GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -57,12 +59,12 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void GetMemberValue_BasicPrivateProperty_ReturnPrivatePropertyValue()
         {
-            AddClassMapping("TestClassWithOnePrivateProperty", new List<string>() { "IntProperty" });
+            Extractor.AddClassMapping("TestClassWithOnePrivateProperty", new List<string>() { "IntProperty" });
             const int propertyValue = 2;
             var testClass = new TestClassWithOnePrivateProperty();
             testClass.SetPrivatePropertyValue(propertyValue);
             object memberValue;
-            bool successfulExtraction = GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(testClass, testClass.GetType(), "IntProperty", out memberValue);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -73,12 +75,12 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void GetMemberValue_BasicPublicField_ReturnPublicFieldValue()
         {
-            AddClassMapping("TestCalssWithOnePublicField", new List<string>() { "IntField" });
+            Extractor.AddClassMapping("TestCalssWithOnePublicField", new List<string>() { "IntField" });
             const int fieldValue = 2;
             var testClass = new TestCalssWithOnePublicField();
             testClass.IntField = fieldValue;
             object memberValue;
-            bool successfulExtraction = GetMemberValue(testClass, testClass.GetType(), "IntField", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(testClass, testClass.GetType(), "IntField", out memberValue);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -88,12 +90,12 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void GetMemberValue_BasicPrivateField_ReturnPrivateFieldValue()
         {
-            AddClassMapping("TestCalssWithOnePrivateField", new List<string>() { "_intField" });
+            Extractor.AddClassMapping("TestCalssWithOnePrivateField", new List<string>() { "_intField" });
             const int fieldValue = 2;
             var testClass = new TestCalssWithOnePrivateField();
             testClass.SetPrivateFieldValue(fieldValue);
             object memberValue;
-            bool successfulExtraction = GetMemberValue(testClass, testClass.GetType(), "_intField", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(testClass, testClass.GetType(), "_intField", out memberValue);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -105,7 +107,7 @@ namespace ObjectsLogAppender.Tests
         public void GetMemberValue_NullTest_ReturnFalseAndNull()
         {
             object memberValue;
-            bool successfulExtraction = GetMemberValue(null, null, "intField", out memberValue);
+            bool successfulExtraction = Extractor.GetMemberValue(null, null, "intField", out memberValue);
             Assert.IsFalse(successfulExtraction);
             Assert.IsNull(memberValue);
 
@@ -114,7 +116,7 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void ExtractMemberValue_OneLevelNestedClass_ReturnPropertyInsideClass()
         {
-            AddClassMapping("OneLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
+            Extractor.AddClassMapping("OneLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
             const int innerPropertyValue = 2;
             var testClass = new OneLevelNestedClass()
             {
@@ -126,7 +128,7 @@ namespace ObjectsLogAppender.Tests
           
             object memberValue;
             string realName;
-            bool successfulExtraction = ExtractMemberValue(testClass, "InnerClass>IntProperty", out memberValue, out realName);
+            bool successfulExtraction = Extractor.ExtractMemberValue(testClass, "InnerClass>IntProperty", out memberValue, out realName);
 
             Assert.IsTrue(successfulExtraction);
 
@@ -137,7 +139,7 @@ namespace ObjectsLogAppender.Tests
         [Test]
         public void ExtractMemberValue_TwoLevelNestedClass_ReturnPropertyInsideClass()
         {
-            AddClassMapping("TwoLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
+            Extractor.AddClassMapping("TwoLevelNestedClass", new List<string>() { "InnerClass>IntProperty" });
             const int innerPropertyValue = 2;
             var testClass = new TwoLevelNestedClass()
             {
@@ -152,7 +154,7 @@ namespace ObjectsLogAppender.Tests
 
             object memberValue;
             string realName;
-            bool successfulExtraction = ExtractMemberValue(testClass, "NestedClass>InnerClass>IntProperty", out memberValue, out realName);
+            bool successfulExtraction = Extractor.ExtractMemberValue(testClass, "NestedClass>InnerClass>IntProperty", out memberValue, out realName);
 
             Assert.IsTrue(successfulExtraction);
 
