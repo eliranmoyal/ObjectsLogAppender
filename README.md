@@ -108,3 +108,7 @@ The Code
 ####TODO:
 + Make it more efficient (save MemberInfos ?)
 <br>
+
+<br>
+idea by [@DimaRabkin](https://github.com/DimaRabkin)
+</br>
