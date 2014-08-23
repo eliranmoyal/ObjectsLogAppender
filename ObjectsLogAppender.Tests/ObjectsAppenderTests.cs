@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using log4net;
 using log4net.Appender;
 using NUnit.Framework;
@@ -93,7 +95,6 @@ namespace ObjectsLogAppender.Tests
             Assert.That(loggingEvent.RenderedMessage, Is.EqualTo(oneWay).Or.EqualTo(otherWay));
         }
 
-
         [Test]
         public void LogSimpleClass_NoClassConfigurationWithSerliazeUnknownFalse_ShouldNotWriteAnything()
         {
@@ -115,6 +116,95 @@ namespace ObjectsLogAppender.Tests
             LoggingEvent[] loggingEvents = appender.GetEvents();
             CollectionAssert.IsEmpty(loggingEvents);
         }
+
+        [Test]
+        public void LogComplexClass_ClassConfigurationWithInnerProperties_ShouldWriteTwoSpecificMembers()
+        {
+
+            string classNameToLog = "ComplexClass";
+            var membersList = new List<string>() { "CoolNamesInList", "Y>X>_intXPrivateField" };
+            ILog logger =
+                GetConfiguredLog(new Dictionary<string, List<string>>() { { classNameToLog, membersList } }, serializeUnknownObjects: true);
+
+
+            var objectToWrite = new ComplexClass()
+            {
+                BlaBla = "bla",
+                CoolNamesInList = new string[] { "eliran", "moyal" },
+                CoolNumbersInArray = new int[] { 1, 2, 4, 8, 16, 32, 64 },
+                Y = new ClassY()
+                {
+                    IntY = 13,
+                    StringY = "Y Y Y",
+                    X = new ClassX()
+                    {
+                        IntX = 12,
+                        StringX = "X X X"
+                    }
+                }
+
+            };
+            objectToWrite.Y.X.SetPrivateInt(14);
+        
+            logger.Debug(objectToWrite);
+
+            MemoryAppender appender = GetMemoryAppender();
+
+            LoggingEvent[] loggedEvents = appender.GetEvents();
+
+            CollectionAssert.IsNotEmpty(loggedEvents);
+            LoggingEvent loggingEvent = loggedEvents[0];
+            Assert.That(loggingEvent.Level, Is.EqualTo(Level.Debug));
+            string firstMemberStringRepresentation = "CoolNamesInList=[\"eliran\",\"moyal\"]";
+            string secondMemberStringRepresentation = "_intXPrivateField=14";
+            string oneWay = string.Format("{0};{1}",firstMemberStringRepresentation,secondMemberStringRepresentation);
+            string otherWay = string.Format("{1};{0}", firstMemberStringRepresentation, secondMemberStringRepresentation); ;
+
+            Assert.That(loggingEvent.RenderedMessage, Is.EqualTo(oneWay).Or.EqualTo(otherWay));
+        }
+
+/*
+        [Test]
+        public void TimeTest_ComplexClass()
+        {
+
+            string classNameToLog = "ComplexClass";
+            var membersList = new List<string>() { "CoolNamesInList", "Y>X>_intXPrivateField" };
+            ILog logger =
+                GetConfiguredLog(new Dictionary<string, List<string>>() { { classNameToLog, membersList } }, serializeUnknownObjects: true);
+
+            
+            var objectToWrite = new ComplexClass()
+            {
+                BlaBla = "bla",
+                CoolNamesInList = new string[] { "eliran", "moyal" },
+                CoolNumbersInArray = new int[] { 1, 2, 4, 8, 16, 32, 64 },
+                Y = new ClassY()
+                {
+                    IntY = 13,
+                    StringY = "Y Y Y",
+                    X = new ClassX()
+                    {
+                        IntX = 12,
+                        StringX = "X X X"
+                    }
+                }
+
+            };
+            objectToWrite.Y.X.SetPrivateInt(14);
+            decimal numberOfIterations = 500000;
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            for (int i = 0; i < numberOfIterations; i++)
+            {
+                logger.Debug(objectToWrite);
+            }
+            stopwatch.Stop();
+            long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+            Assert.IsTrue(true);
+        }
+        */
 
         private ILog GetConfiguredLog(Dictionary<string, List<string>> classesToMembers, bool serializeUnknownObjects = true)
         {
@@ -172,6 +262,33 @@ namespace ObjectsLogAppender.Tests
     {
         public string SomeString { get; set; }
         public int SomeInt { get; set; }
+    }
+    public class ComplexClass
+    {
+        public string BlaBla { get; set; }
+        public int[] CoolNumbersInArray { get; set; }
+        public string[] CoolNamesInList { get; set; }
+        public ClassY Y { get; set; }
+    }
+    public class ClassY
+    {
+        public string StringY { get; set; }
+        public int IntY { get; set; }
+        public ClassX X { get; set; }
+    }
+    public class ClassX
+    {
+        public string StringX { get; set; }
+        public int IntX { get; set; }
+
+        public int IntXField;
+
+        private int _intXPrivateField;
+
+        public void SetPrivateInt(int someValue)
+        {
+            _intXPrivateField = someValue;
+        }
     }
 
     #endregion 
