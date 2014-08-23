@@ -124,8 +124,10 @@ namespace ObjectsLogAppender
 
         private LoggingEvent CreateNewLoggingEvent(LoggingEvent loggingEvent, string newData)
         {
-            var loggingData = loggingEvent.GetLoggingEventData();
+           
+            var loggingData = loggingEvent.GetLoggingEventData(FixFlags.Message);
             loggingData.Message = newData;
+             
             return new LoggingEvent(loggingData);
         }
         private void CallAllAppenders(LoggingEvent loggingEvent)
